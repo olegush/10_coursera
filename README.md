@@ -5,7 +5,12 @@ The script parses xml feed [from coursera.org](https://www.coursera.org/sitemap~
 
 # How to Install
 
-Python **requests**, **openpyxl**, **beautifulsoup4**, **fake_useragent** and **lxml** packages should be already installed. 
+Before you start please install python packages from **requirements.txt**.
+
+```bash
+
+$ pip install -r requirements.txt
+```
 
 
 # Quickstart
