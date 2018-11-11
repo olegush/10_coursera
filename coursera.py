@@ -26,6 +26,14 @@ def get_args_parser():
     return args
 
 
+def get_response(url):
+    return requests.get(
+        url,
+        UserAgent().chrome,
+        timeout=(1, 30)
+    )
+
+
 def get_courses_urls(xml_tree):
     courses_urls_list = []
     for elements in xml_tree.getchildren():
@@ -34,7 +42,8 @@ def get_courses_urls(xml_tree):
     return courses_urls_list
 
 
-def get_course_info(soup):
+def get_course_info(course_html):
+    soup = BeautifulSoup(course_html, 'html.parser')
     start_date = None
     weeks = None
     title = soup.title
@@ -66,16 +75,27 @@ def get_course_info(soup):
     }
 
 
+def get_courses_worksheet(courses_urls):
+    for course_url in courses_urls:
+        time.sleep(5 + round(random.random() * 25))
+        courses_response = get_response(course_url)
+        course_info_dict = get_course_info(courses_response.content)
+        worksheet.append([
+            course_info_dict['title'],
+            course_info_dict['language'],
+            course_info_dict['start_date'],
+            course_info_dict['weeks'],
+            course_info_dict['rating']
+        ])
+    return worksheet
+
+
 if __name__ == '__main__':
     user_args = get_args_parser()
     num_urls = user_args.urls
     filepath = user_args.filename
     coursera_url = 'https://www.coursera.org/sitemap~www~courses.xml'
-    courses_urls_response = requests.get(
-        coursera_url,
-        UserAgent().chrome,
-        timeout=(1, 30)
-    )
+    courses_urls_response = get_response(coursera_url)
     courses_xml_tree = etree.fromstring(courses_urls_response.content)
     courses_list = get_courses_urls(courses_xml_tree)
     print('\nGetting {} random urls from coursera.org ... '.format(num_urls))
@@ -84,23 +104,7 @@ if __name__ == '__main__':
     workbook = Workbook()
     worksheet = workbook.active
     worksheet.append(['title', 'language', 'start date', 'weeks', 'rating'])
-    for course_url in rand_courses_urls:
-        time.sleep(5 + round(random.random() * 25))
-        courses_response = requests.get(
-            course_url,
-            UserAgent().chrome,
-            timeout=(1, 30)
-        )
-        courses_response.encoding = 'utf-8'
-        soup = BeautifulSoup(courses_response.text, 'html.parser')
-        course_info_dict = get_course_info(soup)
-        worksheet.append([
-            course_info_dict['title'],
-            course_info_dict['language'],
-            course_info_dict['start_date'],
-            course_info_dict['weeks'],
-            course_info_dict['rating']
-        ])
+    get_courses_worksheet(rand_courses_urls)
     print('\nWriting data to {} ... '.format(filepath))
     workbook.save(filepath)
     print('\nThe file was saved successfully in the current directory.')
